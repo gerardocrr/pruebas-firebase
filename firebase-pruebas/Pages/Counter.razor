@@ -1,0 +1,58 @@
+﻿@page "/counter"
+@using FireSharp.Response;
+
+<PageTitle>Counter</PageTitle>
+
+<h1>Counter</h1>
+
+<p role="status">Current count: @currentCount</p>
+
+<button class="btn btn-primary mb-5" @onclick="IncrementCount">Click me</button>
+
+<MudDataGrid Items="@Elements.ToList()">
+    <Columns>
+        <PropertyColumn Property="x => x.user" Title="User" />
+        <PropertyColumn Property="x => x.password" Title="Password" />
+        <TemplateColumn CellClass="d-flex justify-end">
+            <CellTemplate>
+                <MudStack Row>
+                    <MudButton Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Primary">Update</MudButton>
+                    <MudButton Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Error">Delete</MudButton>
+                </MudStack>
+            </CellTemplate>
+        </TemplateColumn>
+    </Columns>
+</MudDataGrid>
+
+<h5>@datos</h5>
+
+@code {
+    private int currentCount = 0; string datos = "Realtime";
+    FirebaseController fc = new FirebaseController();
+    Data.API.APIController api = new Data.API.APIController();
+
+    private IEnumerable<Users> Elements = new List<Users>();
+
+    private void IncrementCount()
+    {
+        currentCount++;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Elements = await fc.GetData();
+        Realtime();
+    }
+
+    private async void Realtime()
+    {
+        EventStreamResponse response = await api.client.OnAsync("users", changed: ((sender, args, context) =>
+        {
+            datos = "Se actualizaron los datos";
+            //Elements = await fc.GetData();
+            StateHasChanged();
+        }));
+
+        //response.Dispose();
+    }
+}
